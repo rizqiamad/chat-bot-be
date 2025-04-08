@@ -1,0 +1,76 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+  MANAGER
+}
+
+enum Matchtype {
+  exact
+  contains
+  startsWith
+  endsWith
+}
+
+model Account {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  email        String   @unique
+  phone        String   @unique
+  name         String
+  password     String
+  role         Role     @default(USER)
+  refreshToken String   @default("")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  bots         Bots[]   @relation("UserBots")
+}
+
+model Bots {
+  id        String    @id @default(cuid())
+  userId    String
+  name      String
+  platform  String
+  active    Boolean   @default(true)
+  token     String    @default("")
+  number    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  account   Account   @relation(fields: [userId], references: [id], name: "UserBots")
+  customs   customs[] @relation("BotsCustoms")
+}
+
+model customs {
+  id        String      @id @default(cuid())
+  botsId    String
+  delay     Int
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+  bots      Bots        @relation(fields: [botsId], references: [id], name: "BotsCustoms")
+  questions questions[] @relation("CustomsQuestions")
+}
+
+model questions {
+  id        String    @id @default(cuid())
+  customsId String
+  question  String
+  answer    String
+  matchtype Matchtype
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  customs   customs   @relation(fields: [customsId], references: [id], name: "CustomsQuestions")
+}
