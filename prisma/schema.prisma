@@ -37,12 +37,12 @@ model Account {
   refreshToken String   @default("")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  bots         Bots[]   @relation("UserBots")
+  bots         Bots[]   @relation("AccountBots")
 }
 
 model Bots {
   id        String    @id @default(cuid())
-  userId    String
+  accountId String
   name      String
   platform  String
   active    Boolean   @default(true)
@@ -50,7 +50,7 @@ model Bots {
   number    String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  account   Account   @relation(fields: [userId], references: [id], name: "UserBots")
+  account   Account   @relation(fields: [accountId], references: [id], name: "AccountBots")
   customs   customs[] @relation("BotsCustoms")
 }
 
