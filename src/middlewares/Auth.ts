@@ -4,7 +4,7 @@ import type { Role } from '@prisma/client';
 import { JwtHandling } from '../utils/JwtHandling';
 
 export interface AuthRequest extends Request {
-	user?: {
+	account?: {
 		id: string;
 		email: string;
 		role: Role;
@@ -28,7 +28,7 @@ export default class Auth {
 				token,
 				ACCESS_TOKEN_SECRET
 			);
-			req.user = decoded as { id: string; email: string; role: Role };
+			req.account = decoded as { id: string; email: string; role: Role };
 			next();
 		} catch (err) {
 			next(err);
@@ -36,9 +36,9 @@ export default class Auth {
 	}
 	verifyRoles(allowedRoles: Role[]) {
 		return (req: AuthRequest, _res: Response, next: NextFunction): void => {
-			if (!req.user || !req.user?.role)
+			if (!req.account || !req.account?.role)
 				throw new HttpException(403, 'Forbidden');
-			if (!allowedRoles.includes(req.user.role))
+			if (!allowedRoles.includes(req.account.role))
 				throw new HttpException(403, 'Forbidden');
 			next();
 		};

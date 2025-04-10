@@ -1,53 +1,53 @@
 import type { NextFunction, Request, Response } from 'express';
-import UserService from '../services/UserService';
+import AccountService from '../services/AccountService';
 import { AuthRequest } from '../middlewares/Auth';
 
-const userService = new UserService();
-export default class UserController {
-	private readonly userService: UserService;
+const accountService = new AccountService();
+export default class AccountController {
+	private readonly accountService: AccountService;
 	constructor() {
-		this.userService = userService;
+		this.accountService = accountService;
 	}
 	async getAll(_req: Request, res: Response, next: NextFunction) {
 		try {
-			const users = await this.userService.getAll();
-			res.status(200).json({ users });
+			const accounts = await this.accountService.getAll();
+			res.status(200).json({ accounts });
 		} catch (err) {
 			next(err);
 		}
 	}
 	async getById(req: Request, res: Response, next: NextFunction) {
 		try {
-			const user = await this.userService.getById(req.params.id);
-			res.status(200).json({ user });
+			const account = await this.accountService.getById(req.params.id);
+			res.status(200).json({ account });
 		} catch (err) {
 			next(err);
 		}
 	}
 	async create(req: Request, res: Response, next: NextFunction) {
 		try {
-			const user = await this.userService.create(req.body);
-			res.status(201).json({ user });
+			const account = await this.accountService.create(req.body);
+			res.status(201).json({ account });
 		} catch (err) {
 			next(err);
 		}
 	}
 	async update(req: AuthRequest, res: Response, next: NextFunction) {
 		try {
-			const currentUser = req.user!;
-			const user = await this.userService.update(
+			const currentAccount = req.account!;
+			const account = await this.accountService.update(
 				req.params.id,
 				req.body,
-				currentUser
+				currentAccount
 			);
-			res.status(200).json({ user });
+			res.status(200).json({ account });
 		} catch (err) {
 			next(err);
 		}
 	}
 	async delete(req: Request, res: Response, next: NextFunction) {
 		try {
-			await this.userService.delete(req.params.id);
+			await this.accountService.delete(req.params.id);
 			res.sendStatus(204);
 		} catch (err) {
 			next(err);

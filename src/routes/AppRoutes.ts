@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { UserRoutes } from './UserRoutes';
+import { AccountRoutes } from './AccountRoutes';
 import Auth from '../middlewares/Auth';
 import { Role } from '@prisma/client';
 import { AuthRoutes } from './AuthRoutes';
@@ -10,7 +10,7 @@ router.use(
 	'/users',
 	authMiddleware.verifyToken,
 	authMiddleware.verifyRoles([Role.ADMIN, Role.USER]),
-	UserRoutes
+	AccountRoutes
 );
 router.use('/auth', AuthRoutes);
 export { router as AppRoutes };
