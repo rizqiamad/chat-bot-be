@@ -47,7 +47,7 @@ model Bots {
   platform  String
   active    Boolean   @default(true)
   token     String    @default("")
-  number    String
+  phone     String
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   account   Account   @relation(fields: [accountId], references: [id], name: "AccountBots")

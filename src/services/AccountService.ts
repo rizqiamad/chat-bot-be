@@ -18,6 +18,8 @@ export default class AccountService {
 	async getAll() {
 		return await this.accountRepository.getAll({
 			id: true,
+			name: true,
+			phone: true,
 			email: true,
 			role: true,
 			// password tidak di-include
@@ -32,9 +34,10 @@ export default class AccountService {
 
 	async getByKey(
 		key: keyof Prisma.AccountWhereInput,
-		value: Prisma.AccountWhereInput[typeof key]
+		value: Prisma.AccountWhereInput[typeof key],
+		options?: { select?: any; many?: boolean }
 	) {
-		return await this.accountRepository.getByKey(key, value);
+		return await this.accountRepository.getByKey(key, value, options);
 	}
 
 	async create(data: CreateAccountInput) {
@@ -50,7 +53,8 @@ export default class AccountService {
 		data: UpdateAccountInput,
 		currentAccount: { id: string; role: Role }
 	) {
-		await this.getById(id);
+		const existingAccount = await this.getById(id);
+		if (!existingAccount) throw new HttpException(404, 'Account not found');
 		if (currentAccount.id !== id && currentAccount.role !== Role.ADMIN)
 			throw new HttpException(403, 'Forbidden');
 		if (currentAccount.role !== Role.ADMIN && data.role) delete data.role;

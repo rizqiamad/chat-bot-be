@@ -22,9 +22,13 @@ export default class AuthService {
 	}
 	async login(data: LoginAccountInput): Promise<AuthTokens> {
 		let account;
-		if (data.phone)
+		if (data.phone) {
 			account = await this.accountService.getByKey('phone', data.phone);
-		else account = await this.accountService.getByKey('email', data.email);
+		} else if (data.email) {
+			account = await this.accountService.getByKey('email', data.email);
+		} else {
+			account = await this.accountService.getByKey('username', data.username);
+		}
 		if (!account || !(await bcrypt.compare(data.password, account.password)))
 			throw new HttpException(400, 'Wrong credentials');
 		const { accessToken, refreshToken } = this.jwthandling.genAuthTokens({

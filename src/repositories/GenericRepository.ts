@@ -23,12 +23,24 @@ export default class GenericRepository<
 		return await this.model.findUnique({ where: { id } });
 	}
 
-	async getByKey(
+	async getByKey<TSelect>(
 		key: keyof TWhereInput,
-		value: TWhereInput[keyof TWhereInput]
+		value: TWhereInput[typeof key],
+		options?: {
+			select?: TSelect;
+			many?: boolean;
+		}
 	) {
-		// @ts-expect-error
-		return await this.model.findFirst({ where: { [key]: value } });
+		const query = {
+			where: { [key]: value } as any,
+			select: options?.select,
+		};
+
+		return options?.many
+			? // @ts-expect-error
+			  await this.model.findMany(query)
+			: // @ts-expect-error
+			  await this.model.findFirst(query);
 	}
 
 	async create(data: TCreateInput) {

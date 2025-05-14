@@ -8,7 +8,7 @@ const phoneRegex = new RegExp(
 	/^(?:\+62|0)?[-. ]?\(?([0-9]{2,4})\)?[-. ]?([0-9]{3,4})[-. ]?([0-9]{4,6})$/
 );
 
-export const baseAccountSchema = z.object({
+const baseAccountSchema = z.object({
 	name: z.string().min(1, { message: 'Must contain at least 1 character' }),
 	username: z.string().min(6, { message: 'Must contain at least 6 character' }),
 	phone: z.string().regex(phoneRegex, 'Must be a valid phone number'),
@@ -20,63 +20,103 @@ export const baseAccountSchema = z.object({
 	refreshToken: z.string().optional(),
 });
 
-// CREATE schema (full validation)
-export const createAccountSchema = baseAccountSchema.superRefine(
-	async (data, ctx) => {
-		const existingEmail = await accountService.getByKey('email', data.email);
-		if (existingEmail) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: 'Email already registered',
-				path: ['email'],
-			});
-		}
-		const existingPhone = await accountService.getByKey('phone', data.phone);
-		if (existingPhone) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: 'Phone already registered',
-				path: ['phone'],
-			});
-		}
-		const existingUsername = await accountService.getByKey(
-			'username',
-			data.phone
-		);
-		if (existingUsername) {
-			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
-				message: 'username already registered',
-				path: ['username'],
-			});
-		}
+/**
+ * Reusable superRefine function to validate unique constraints
+ */
+const validateUniqueFields = async (
+	data: z.infer<typeof baseAccountSchema>,
+	ctx: z.RefinementCtx
+) => {
+	const [existingEmail, existingPhone, existingUsername] = await Promise.all([
+		accountService.getByKey('email', data.email),
+		accountService.getByKey('phone', data.phone),
+		accountService.getByKey('username', data.username),
+	]);
+
+	if (existingEmail) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'Email already registered',
+			path: ['email'],
+		});
 	}
-);
+	if (existingPhone) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'Phone already registered',
+			path: ['phone'],
+		});
+	}
+	if (existingUsername) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			message: 'Username already registered',
+			path: ['username'],
+		});
+	}
+};
 
-export type CreateAccountInput = z.infer<typeof baseAccountSchema>;
+// CREATE schema (full validation)
+export const createAccountSchema =
+	baseAccountSchema.superRefine(validateUniqueFields);
+export type CreateAccountInput = z.infer<typeof createAccountSchema>;
 
-export const updateAccountSchema = baseAccountSchema.partial();
+// UPDATE schema (partial input + validation)
+export const updateAccountSchema = baseAccountSchema
+	.partial()
+	.superRefine(async (data, ctx) => {
+		if (data.email || data.phone || data.username) {
+			// Hanya validasi field yang diberikan
+			const checks = await Promise.all([
+				data.email ? accountService.getByKey('email', data.email) : null,
+				data.phone ? accountService.getByKey('phone', data.phone) : null,
+				data.username
+					? accountService.getByKey('username', data.username)
+					: null,
+			]);
 
+			if (checks[0]) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: 'Email already registered',
+					path: ['email'],
+				});
+			}
+			if (checks[1]) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: 'Phone already registered',
+					path: ['phone'],
+				});
+			}
+			if (checks[2]) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					message: 'Username already registered',
+					path: ['username'],
+				});
+			}
+		}
+	});
 export type UpdateAccountInput = z.infer<typeof updateAccountSchema>;
 
-export const registerAccountSchema = baseAccountSchema.omit({
-	role: true,
-	refreshToken: true,
-});
-
+// REGISTER schema (create user, no admin role)
+export const registerAccountSchema = baseAccountSchema
+	.omit({ role: true, refreshToken: true })
+	.superRefine(validateUniqueFields);
 export type RegisterAccountInput = z.infer<typeof registerAccountSchema>;
 
-export const loginAccountSchema = registerAccountSchema
-	.omit({ name: true })
+// LOGIN schema (flexible login)
+export const loginAccountSchema = baseAccountSchema
+	.omit({
+		name: true,
+		role: true,
+		refreshToken: true,
+	})
+	.partial()
 	.extend({
-		phone: z
+		password: z
 			.string()
-			.regex(phoneRegex, 'Must be a valid phone number')
-			.optional(),
-		email: z
-			.string()
-			.email({ message: 'Must be a valid email address' })
-			.optional(),
+			.min(6, { message: 'Must be at least 6 characters long' }), // override jadi wajib
 	});
-
 export type LoginAccountInput = z.infer<typeof loginAccountSchema>;
