@@ -51,10 +51,10 @@ model Bots {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   account   Account   @relation(fields: [accountId], references: [id], name: "AccountBots")
-  customs   customs[] @relation("BotsCustoms")
+  customs   Customs[] @relation("BotsCustoms")
 }
 
-model customs {
+model Customs {
   id        String      @id @default(cuid())
   botsId    String
   delay     Int
@@ -72,5 +72,5 @@ model questions {
   matchtype Matchtype
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
-  customs   customs   @relation(fields: [customsId], references: [id], name: "CustomsQuestions")
+  customs   Customs   @relation(fields: [customsId], references: [id], name: "CustomsQuestions")
 }
